@@ -29,6 +29,7 @@
 #include "asynccb.h"
 #include "conn.h"
 #include "sub.h"
+#include "nkeys.h"
 
 #define WAIT_LIB_INITIALIZED \
         natsMutex_Lock(gLib.lock); \
@@ -963,6 +964,8 @@ nats_Open(int64_t lockSpinCount)
     // If the caller specifies negative value, then we use the default
     if (lockSpinCount >= 0)
         gLockSpinCount = lockSpinCount;
+
+    nats_Base32Init();
 
     s = _createLocale();
     if (s == NATS_OK)

@@ -29,6 +29,8 @@
 #include "msg.h"
 #include "stats.h"
 #include "comsock.h"
+#include "tweetnacl.h"
+#include "nkeys.h"
 #if defined(NATS_HAS_STREAMING)
 #include "stan/conn.h"
 #include "stan/pub.h"
@@ -2906,6 +2908,120 @@ test_natsErrStackMoreThanMaxFrames(void)
             s = NATS_ERR;
     }
     testCond(s == NATS_OK);
+}
+
+static void
+test_natsBase32Decode(void)
+{
+    natsStatus      s;
+    const char      *src       = "THISISTHEBASE32ENCODEDVERSION";
+    unsigned char   expected[] = {153, 209, 36, 74, 103, 32, 65, 34, 111, 68, 104, 156, 50, 14, 164, 140, 144, 230};
+    char            dst[256];
+    int             dstLen = 0;
+
+    test("Decode: ");
+    s = nats_Base32DecodeString((char*) src, dst, (int) sizeof(dst), &dstLen);
+    testCond((s == NATS_OK)
+                && (dstLen == (int) sizeof(expected))
+                && (memcmp(&expected, &dst, dstLen) == 0));
+
+    test("Dest too small: ");
+    if (s == NATS_OK)
+        s = nats_Base32DecodeString((char*) src, dst, 10, &dstLen);
+    testCond((s == NATS_INSUFFICIENT_BUFFER) && (dstLen == 0));
+    if (s == NATS_INSUFFICIENT_BUFFER)
+    {
+        s = NATS_OK;
+        nats_clearLastError();
+    }
+
+    test("Invalid string: ");
+    if (s == NATS_OK)
+        s = nats_Base32DecodeString((char*)"This is invalid content", dst, (int) sizeof(dst), &dstLen);
+    testCond((s == NATS_ERR)
+                && (nats_GetLastError(NULL) != NULL)
+                && (strstr(nats_GetLastError(NULL), "invalid") != NULL));
+    nats_PrintLastErrorStack(stderr);
+}
+
+static void
+test_natsCRC16(void)
+{
+    natsStatus      s;
+    unsigned char   a[] = {153, 209, 36, 74, 103, 32, 65, 34, 111, 68, 104, 156, 50, 14, 164, 140, 144, 230};
+    uint16_t        crc = 0;
+    uint16_t        expected = 10272;
+
+    test("Compute: ");
+    crc = nats_CRC16Compute(a, (int)sizeof(a));
+    testCond(crc == expected);
+
+    test("Verify: ");
+    testCond(nats_CRC16Validate(a, (int)sizeof(a), expected));
+
+    test("Expect failure: ");
+    a[3] = 63;
+    testCond(!nats_CRC16Validate(a, (int)sizeof(a), expected));
+}
+
+static void
+test_natsKeys(void)
+{
+    natsStatus          s;
+    char                *out       = NULL;
+    int                 len        = 0;
+    const char          *nonce     = "nonce";
+    const unsigned char expected[] = {
+            100, 189, 237,  97, 181, 233,  12,  87,
+            190,  88, 148,  13, 110,  91,  18, 141,
+            214,  47, 138, 141,  27, 155, 205, 157,
+             40, 196, 239,  69, 182,  74, 221, 132,
+            100,  30,  89, 237, 105,  42, 187,  85,
+            244, 217,  14,  88, 221,  13, 178, 171,
+             13, 219,  95,  79, 107,   7, 247, 151,
+            152, 240,  52,  92, 224,   7, 110,   4,
+    };
+
+    test("Invalid key: ");
+    s = natsKeys_Sign((char*) "ABC", (char*) nonce, &out, &len);
+    testCond((s == NATS_ERR)
+            && (out == NULL)
+            && (len == 0)
+            && (nats_GetLastError(NULL) != NULL)
+            && (strstr(nats_GetLastError(NULL), NKEYS_INVALID_ENCODED_KEY) != NULL));
+    nats_clearLastError();
+
+    // This is generated from XYTHISISNOTAVALIDSEED with correct checksum.
+    // Expect to get invalid seed
+    test("Invalid seed: ");
+    s = natsKeys_Sign((char*) "LBMVISCJKNEVGTSPKRAVMQKMJFCFGRKFIQ52C", (char*) nonce, &out, &len);
+    testCond((s == NATS_ERR)
+                && (out == NULL)
+                && (len == 0)
+                && (nats_GetLastError(NULL) != NULL)
+                && (strstr(nats_GetLastError(NULL), NKEYS_INVALID_SEED) != NULL));
+    nats_clearLastError();
+
+    // This is the valid seed: SUAHRFS2IQBRV6ZBOGWQBSO7HV433DK27NAO2QIQTU7ITEKVCLUJ5RMFSSXEMOSK3F2XVUD6QJWLEW2BHWW3MCVA3KMKJERRUCWRN7QQXVPWG
+    // Make the checksum incorrect by changing last 2 bytes.
+    test("Invalid checksum: ");
+    s = natsKeys_Sign((char*) "SUAHRFS2IQBRV6ZBOGWQBSO7HV433DK27NAO2QIQTU7ITEKVCLUJ5RMFSSXEMOSK3F2XVUD6QJWLEW2BHWW3MCVA3KMKJERRUCWRN7QQXVPAA", (char*) nonce, &out, &len);
+    testCond((s == NATS_ERR)
+                && (out == NULL)
+                && (len == 0)
+                && (nats_GetLastError(NULL) != NULL)
+                && (strstr(nats_GetLastError(NULL), NKEYS_INVALID_CHECKSUM) != NULL));
+    nats_clearLastError();
+
+    // Now use valid SEED
+    test("Sign ok: ");
+    s = natsKeys_Sign((char*) "SUAHRFS2IQBRV6ZBOGWQBSO7HV433DK27NAO2QIQTU7ITEKVCLUJ5RMFSSXEMOSK3F2XVUD6QJWLEW2BHWW3MCVA3KMKJERRUCWRN7QQXVPWG", (char*) nonce, &out, &len);
+    testCond((s == NATS_OK)
+                && (out != NULL)
+                && (len == (int) sizeof(expected))
+                && (memcmp(out, expected, sizeof(expected)) == 0));
+
+    NATS_FREE(out);
 }
 
 natsStatus
@@ -15525,6 +15641,9 @@ static testInfo allTests[] =
     {"natsJSON",                        test_natsJSON},
     {"natsErrWithLongText",             test_natsErrWithLongText},
     {"natsErrStackMoreThanMaxFrames",   test_natsErrStackMoreThanMaxFrames},
+    {"natsBase32Decode",                test_natsBase32Decode},
+    {"natsCRC16",                       test_natsCRC16},
+    {"nkeys",                           test_natsKeys},
 
     // Package Level Tests
 

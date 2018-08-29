@@ -83,4 +83,16 @@ nats_JSONGetArrayValue(nats_JSON *json, const char *fieldName, int fieldType, vo
 void
 nats_JSONDestroy(nats_JSON *json);
 
+void
+nats_Base32Init(void);
+
+natsStatus
+nats_Base32DecodeString(char *src, char *dst, int dstMax, int *dstLen);
+
+uint16_t
+nats_CRC16Compute(unsigned char *data, int len);
+
+bool
+nats_CRC16Validate(unsigned char *data, int len, uint16_t expected);
+
 #endif /* UTIL_H_ */
