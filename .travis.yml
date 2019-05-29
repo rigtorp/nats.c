@@ -32,6 +32,7 @@ matrix:
       env:        
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Debug -DNATS_COVERAGE=ON -DNATS_COVERAGE_UPLOAD=ON -DCMAKE_BUILD_TYPE=Debug" DO_COVERAGE="coverage"
 
+        
 before_install:
   - bash install_servers.sh
 
