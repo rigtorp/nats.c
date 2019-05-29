@@ -36,6 +36,30 @@ env:
 
 matrix:
   include:
+    # gcc-6
+    - compiler: gcc
+      os: linux
+      addons:
+        apt:
+          packages:
+          - gcc-6
+          sources:
+          - ubuntu-toolchain-r-test
+      env: 
+        - MATRIX_EVAL="CC=gcc-6"
+        - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
+    # gcc-7
+    - compiler: gcc
+      os: linux
+      addons:
+        apt:
+          packages:
+          - gcc-7
+          sources:
+          - ubuntu-toolchain-r-test
+      env: 
+        - MATRIX_EVAL="CC=gcc-7"
+        - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
     # gcc-8
     - compiler: gcc
       os: linux
@@ -45,7 +69,21 @@ matrix:
           - gcc-8
           sources:
           - ubuntu-toolchain-r-test
-      env: MATRIX_EVAL="CC=gcc"
+      env: 
+        - MATRIX_EVAL="CC=gcc-8"
+        - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
+    # gcc-9
+    - compiler: gcc
+      os: linux
+      addons:
+        apt:
+          packages:
+          - gcc-9
+          sources:
+          - ubuntu-toolchain-r-test
+      env: 
+        - MATRIX_EVAL="CC=gcc-9"
+        - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
 
 script:
   - $TRAVIS_BUILD_DIR/buildOnTravis.sh "$CC" "$DO_COVERAGE" "$BUILD_OPT" "$CTEST_OPT"
