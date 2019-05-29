@@ -80,6 +80,17 @@ matrix:
       env: 
         - MATRIX_EVAL="CC=gcc-9"
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
+    - compiler: gcc
+      os: linux
+      addons:
+        apt:
+          packages:
+          - gcc-9
+          sources:
+          - ubuntu-toolchain-r-test
+      env: 
+        - MATRIX_EVAL="CC=gcc-9"
+        - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fsanitize=address" DO_COVERAGE="no"        
     - compiler: clang
       os: linux
       addons:
