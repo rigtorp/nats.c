@@ -19,6 +19,7 @@ addons:
     - unzip
 
 before_install:
+  - eval "${MATRIX_EVAL}"
   - bash install_servers.sh
 
 before_script:
@@ -32,6 +33,19 @@ env:
   - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" NATS_TEST_VALGRIND=yes CTEST_OPT="-T memcheck" DO_COVERAGE="no"
   - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" NATS_DEFAULT_TO_LIB_MSG_DELIVERY=yes NATS_TEST_VALGRIND=yes CTEST_OPT="-T memcheck" DO_COVERAGE="no"
   - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Debug -DNATS_COVERAGE=ON -DNATS_COVERAGE_UPLOAD=ON -DCMAKE_BUILD_TYPE=Debug" DO_COVERAGE="coverage"
+
+matrix:
+  include:
+    # gcc-8
+    - compiler: gcc
+      os: linux
+      addons:
+        apt:
+          packages:
+          - gcc-8
+          sources:
+          - ubuntu-toolchain-r-test
+      env: MATRIX_EVAL="CC=gcc"
 
 script:
   - $TRAVIS_BUILD_DIR/buildOnTravis.sh "$CC" "$DO_COVERAGE" "$BUILD_OPT" "$CTEST_OPT"
