@@ -80,15 +80,16 @@ matrix:
       env: 
         - MATRIX_EVAL="CC=gcc-9"
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
-    - os: linux
+    - compiler: clang
+      os: linux
       addons:
         apt:
           sources:
-            - llvm-toolchain-precise-8.0
+            - llvm-toolchain-xenial-8
           packages:
-            - clang-8.0
+            - clang-8
       env:
-        - CC=clang-8.0
+        - CC=clang-8
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
 
 script:
