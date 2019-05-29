@@ -7,22 +7,29 @@ cache:
 
 sudo: false
 
+addons:
+  apt:
+    packages:
+      - valgrind
+      - libssl-dev
+      - unzip
+
 matrix:
   include:      
-    - compiler: 
-        - gcc
-        - clang
-      addons:
-        apt:
-          packages:
-           - valgrind
-           - libssl-dev
-           - unzip
+    - compiler: gcc
       env:
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" DO_COVERAGE="no"
+    - compiler: gcc
+      env:        
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release -DNATS_BUILD_WITH_TLS=OFF" DO_COVERAGE="no"
+    - compiler: gcc
+      env:        
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" NATS_TEST_VALGRIND=yes CTEST_OPT="-T memcheck" DO_COVERAGE="no"
+    - compiler: gcc
+      env:        
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Release" NATS_DEFAULT_TO_LIB_MSG_DELIVERY=yes NATS_TEST_VALGRIND=yes CTEST_OPT="-T memcheck" DO_COVERAGE="no"
+    - compiler: gcc
+      env:        
         - BUILD_OPT="-DNATS_BUILD_ARCH=64 -DNATS_BUILD_TYPE=Debug -DNATS_COVERAGE=ON -DNATS_COVERAGE_UPLOAD=ON -DCMAKE_BUILD_TYPE=Debug" DO_COVERAGE="coverage"
 
 before_install:
